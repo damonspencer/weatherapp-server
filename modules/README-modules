@@ -1,0 +1,7 @@
+NOT COMPLETE YET
+This is where you can add weather modules (in the future) to get weather data from different
+websites(weather.com, Intellicast, Accuweather, etc.)
+
+upon startup of the weather server, it will automatically check for modules
+in this directory. Each module
+Some test data is available in tests/testdata to assist you in module creation.
