@@ -25,18 +25,20 @@ func main() {
 	} else {
 		log.Println("Weather server starting up")
 	}
+	var Clientmap map[string]string = make(map[string]string)
+	//map of client to location of weather data requested
 	server, err := socketio.NewServer(nil)
 
-	//TODO keep track of users
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("Weather server starting up")
-
-	server.On("connection", func(socket socketio.Socket) {
-
-		log.Println("User connected") //maybe add user name?
+	server.On("connection", func(socket socketio.Socket, location string) {
+		log.Println("Client", socket.Id(),
+			"connected wanting the weather of", location)
+		Clientmap[socket.Id()] = location
+		socket.Join("users") //for general messages to all users
+		//log.Println("there are", get_user_count(), get_user_list())
+		log.Println()
 		//socket.Join("locationupdate")
 		//socket.Join("sendweatherdata")
 		//socket.On("locationupdate message", func(msg string) {
@@ -52,9 +54,14 @@ func main() {
 		//socket.Emit("weatherdata", "weatherdata message", msg)
 		//update the client with new weather data
 		//})
+		socket.On("location update", func(location string) {
+			log.Println("Client", socket.Id(), "updated location to", location)
+			Clientmap[socket.Id()] = location
+		})
 
-		socket.On("disconnection", func(clientid string) {
-			log.Println(clientid, "disconnected") //maybe add client id?
+		socket.On("disconnection", func() { //(socket socketio.Socket) {
+			log.Println("Client", socket.Id(), "disconnected")
+			delete(Clientmap, socket.Id())
 		})
 
 	})
@@ -62,7 +69,13 @@ func main() {
 	server.On("error", func(so socketio.Socket, err error) {
 		log.Println("error:", err)
 	})
-
+	//setInterval(func() {
+	//var randomClient
+	//if (clients.length > 0) {
+	//randomClient = Math.floor(Math.random() * clients.length)
+	//clients[randomClient].emit('foo', sequence++)
+	//}
+	//}, 1000)
 	http.Handle("/socket.io/", server)
 	http.Handle("/", http.FileServer(http.Dir("./asset")))
 	log.Println("Serving at localhost:5000...")
