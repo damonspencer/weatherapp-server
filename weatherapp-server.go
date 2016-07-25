@@ -20,8 +20,10 @@ func main() {
 	args := os.Args[1:]
 	if contains(args, "test") {
 		log.Println("Weather server starting up in test mode")
-	} else {
+	} else if args != nil {
 		log.Println("Weather server starting up with args", args)
+	} else {
+		log.Println("Weather server starting up")
 	}
 	server, err := socketio.NewServer(nil)
 
@@ -35,22 +37,24 @@ func main() {
 	server.On("connection", func(socket socketio.Socket) {
 
 		log.Println("User connected") //maybe add user name?
-		socket.Join("locationupdate")
-		socket.Join("sendweatherdata")
-		socket.On("locationupdate message", func(msg string) {
-			log.Println("emiting:", socket.Emit("locationupdate message", msg))
-			socket.Emit("locationupdate", "locationupdate message", msg)
-			//aknowlege we recived their location update request
-		})
+		//socket.Join("locationupdate")
+		//socket.Join("sendweatherdata")
+		//socket.On("locationupdate message", func(msg string) {
+		//log.Println("emiting:", socket.Emit("locationupdate message", msg))
+		//log.Println("Received location update from", clientid)
+		//socket.Emit("locationupdate message", msg))
+		//socket.Emit("locationupdate", "locationupdate message", msg)
+		//aknowlege we recived their location update request
+		//})
 
-		socket.On("locationupdate message", func(msg string) {
-			log.Println("emiting:", socket.Emit("sendweatherdata message", msg))
-			socket.Emit("weatherdata", "weatherdata message", msg)
-			//update the client with new weather data
-		})
+		//socket.On("locationupdate message", func(msg string) {
+		//log.Println("emiting:", socket.Emit("sendweatherdata message", msg))
+		//socket.Emit("weatherdata", "weatherdata message", msg)
+		//update the client with new weather data
+		//})
 
-		socket.On("disconnection", func() {
-			log.Println("User disconnected") //maybe add user name?
+		socket.On("disconnection", func(clientid string) {
+			log.Println(clientid, "disconnected") //maybe add client id?
 		})
 
 	})
