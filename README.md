@@ -1,4 +1,4 @@
-The open, extensible weather server, which is still in the works
+The open, scalable weather server, which is still in the works
 Requires the go socket.io library v1.0
 
 
