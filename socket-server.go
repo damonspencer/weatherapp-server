@@ -4,9 +4,23 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/googollee/go-socket.io"
 )
+
+var clientmap map[string]string
+var locationmap map[string]string
+
+//var locationlist list
+var arraymutex sync.Mutex
+var locationarray []string
+
+//var locationlist list
+
+//I'm not even sure if I need it, but its better to be safe than sorry.
+//I hope I don't go overboard, this is maybe
+// the first time there's a chance I may have concurrency issues
 
 //I don't think this needs to be global
 func contains(list []string, elem string) bool {
@@ -17,14 +31,34 @@ func contains(list []string, elem string) bool {
 	}
 	return false
 }
+
+func getkeys(m map[string]string) (keys []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func getlocationlist() []string {
+	arraymutex.Lock()
+	copiedlocations := locationarray
+	//a bad attempt that may or may not be needed
+	//to make sure the socket server isn't writing to it
+	arraymutex.Unlock()
+	return copiedlocations
+}
+
 func socketserver() {
-	var clientmap map[string]string = make(map[string]string)
+	clientmap = make(map[string]string)
 	//map of client to location of weather data requested,
 	//I'm not sure if I'll use this, the reverse map seems more useful
-	var locationmap map[string]string = make(map[string]string)
+	locationmap = make(map[string]string)
 	//map of location of weather data requested to clients
+	//	var locationlist map[string]string = make(map[string]string)
+	//all the wdc wants is the locations,
+	//so lets process the map instad of sending the whole thing
+	arraymutex.Unlock() //unlock the list if its not unlocked
 	server, err := socketio.NewServer(nil)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,9 +91,12 @@ func socketserver() {
 			//This is all completely theoretical and came out my head at 4am
 
 			strings.Replace(locationmap[oldlocation], socket.Id()+":", "", -1)
-			//remove from old key
+			//remove from old value
 			locationmap[loc] += socket.Id() + ":"
-			//add to new key
+			//add to new value
+			arraymutex.Lock() //lock the list
+			locationarray = getkeys(locationmap)
+			arraymutex.Unlock() //we're done
 		})
 
 		socket.On("disconnection", func() { //(socket socketio.Socket) {
