@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var weathermap map[string]string
 
@@ -13,8 +16,9 @@ func wdclient() {
 		locationchannel <- locationarray
 		locations := <-locationchannel
 		fmt.Println(locations)
+		time.Sleep(1000 * time.Millisecond)
 	}
 
 }
 
-//TODO
+//for reference only send locations > get wd > send back delta map
