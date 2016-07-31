@@ -33,7 +33,7 @@ func getkeys(m map[string]string) (keys []string) {
 	return keys
 }
 
-func socketserver() {
+func socketserver(args []string) { //args currently not used here
 	clientmap = make(map[string]string)
 	//map of client to location of weather data requested,
 	//I'm not sure if I'll use this, the reverse map seems more useful
@@ -78,12 +78,10 @@ func socketserver() {
 			//remove from old value
 			locationmap[loc] += socket.Id() + ":"
 			//add to new value
-			//arraymutex.Lock() //lock the list
 			locationarray = getkeys(locationmap)
-			//arraymutex.Unlock() //we're done
 		})
 
-		socket.On("disconnection", func() { //(socket socketio.Socket) {
+		socket.On("disconnection", func() {
 			log.Println("Client", socket.Id(), "disconnected")
 			delete(clientmap, socket.Id())
 		})

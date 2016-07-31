@@ -14,6 +14,6 @@ func main() {
 	} else {
 		log.Println("Weather server starting up")
 	}
-	go wdclient()
-	socketserver()
+	go wdclient(args)
+	socketserver(args)
 }
