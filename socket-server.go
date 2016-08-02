@@ -92,7 +92,7 @@ func socketserver(args []string) { //args currently not used here
 		log.Println("error:", err)
 	})
 	http.Handle("/socket.io/", server)
-	http.Handle("/", http.FileServer(http.Dir("./asset")))
+	http.Handle("/socketserver", http.FileServer(http.Dir("./asset")))
 	log.Println("Serving at localhost:5000...")
 	log.Fatal(http.ListenAndServe(":5000", nil))
 }

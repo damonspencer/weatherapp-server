@@ -1,13 +1,16 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"strconv"
+	"time"
 )
 
 //gets data from testdata and updates the server every minute
-//for now, the fake, poorly made, weather data is in the format:
+//for now, the fake weather data is in the format:
 /*
 {
 "Country":"Somecountry",
@@ -34,7 +37,7 @@ type Weatherdata struct {
 	Winddir       float64
 	Percentcloudy int
 	Percentrain   int
-	time          string
+	Time          string
 }
 
 //dynamically generate and post the fake weather data
@@ -48,7 +51,28 @@ var weathertypes []string = []string{"clear",
 
 //this should be sufficent for testing
 
-func tester() {
+func Fakewdhttpserver() {
+
+	t := time.Now() //get time
+	r, err := strconv.Atoi(t.Format("20060102150405"))
+	if err != nil {
+		fmt.Println(err)
+		//TODO better error recovery
+	}
+	rand.Seed(int64(r)) //seed the rng
+
+	http.HandleFunc("/fakewd", handler)
+	http.ListenAndServe(":5555", nil)
+	//a bad, but working handler function because
+	//the better ones I made didn't work right
+}
+
+//dynamically generate weather data each time you refresh the page
+func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, getfakewd(), r.URL.Path[1:])
+}
+
+func getfakewd() string {
 	hour := rand.Intn(24)
 	min := rand.Intn(60)
 	weathertype := ""
@@ -59,6 +83,7 @@ func tester() {
 	} else { //its day
 		weathertype = weathertypes[rand.Intn(len(weathertypes))]
 	}
+	//if its clear or sunny it can't be cloudy or rainy
 	if weathertype != "clear" && weathertype != "sunny" {
 		percentcloudy = rand.Intn(100)
 		percentrain = rand.Intn(100)
@@ -67,11 +92,18 @@ func tester() {
 	temp := rand.Intn(100) + 220
 	windspeed := rand.Float64() * 100 //arbitrary max speed
 	winddir := rand.Float64() * 360
+
 	wd := Weatherdata{country, cities[cityno], lats[cityno], lons[cityno],
 		weathertype, temp, windspeed, winddir, percentcloudy, percentrain,
 		strconv.Itoa(hour) + ":" + strconv.Itoa(min)}
-	fmt.Println(wd)
-	rand.Intn(len(weathertypes))
+	//create an instance of weatherdata
 
-	//TODO post the weather data
+	wdjson, err := json.Marshal(wd)
+	//jsonify
+	wdjsonstr := string(wdjson)
+	if err != nil {
+		fmt.Println(err)
+		//TODO better error recovery
+	}
+	return wdjsonstr
 }

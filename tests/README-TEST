@@ -1,2 +1,3 @@
-a fake external source for weather data. dynamically generates test data, 
-and spits it out on port 5555. for simplicity, only supports 2 cities: foo and bar
+a fake external source for weather data. dynamically generates test data,
+and spits it out on localhost:5555/fakewd.
+for simplicity, it only supports 2 cities: foo and bar
