@@ -33,6 +33,7 @@ func getkeys(m map[string]string) (keys []string) {
 	return keys
 }
 
+//func handleerror(){}
 func socketserver(args []string) { //args currently not used here
 	clientmap = make(map[string]string)
 	//map of client to location of weather data requested,
@@ -93,6 +94,6 @@ func socketserver(args []string) { //args currently not used here
 	})
 	http.Handle("/socket.io/", server)
 	http.Handle("/socketserver", http.FileServer(http.Dir("./asset")))
-	log.Println("Serving at localhost:5000...")
+	log.Println("Serving at localhost:5555...")
 	log.Fatal(http.ListenAndServe(":5000", nil))
 }

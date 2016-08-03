@@ -13,7 +13,7 @@ func main() {
 	//} else {
 	log.Println("Weather server starting up with args:", args)
 	//}
-	go tests.Fakewdhttpserver()
+	go tests.Fakewdhttpserver() //oh well, now I have to build instead of go run...
 	go wdclient(args)
 	socketserver(args)
 }
