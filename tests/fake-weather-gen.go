@@ -7,43 +7,17 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"weatherapp-server/weatherdata"
 )
 
 //gets data from testdata and updates the server every minute
 //for now, the fake weather data is in the format:
-/*
-{
-"Country":"Somecountry",
-"City":"Somecity",
-"Lat":123.456,
-"Lon":789.012,
-"Weather":"cloudy",
-"Temperature":"314",  //in kelvin
-"Windspeed":5.1, //mph
-"Winddir":150, //in degrees
-"Percentcloudy":74, //percent
-"Percentrain":"0", //percent
-"time" : "21:34" //24 hour time format
-}
-*/
-type Weatherdata struct {
-	Country       string
-	City          string
-	Lat           float64
-	Lon           float64
-	Weather       string
-	Temperature   int
-	Windspeed     float64
-	Winddir       float64
-	Percentcloudy int
-	Percentrain   int
-	Hour          int
-	Min           int
-}
+//see weatherdata/weatherdata.go
 
 //dynamically generate and post the fake weather data
 
 var country string = "Magnificent Glorious Country"
+var threedigitcc string = "MGC"
 var cities []string = []string{"Foo", "Bar", "Fgh", "somecity", "whatami"}
 var lats []float64 = []float64{123.456, 654.321, 732.345, 908.243, 675.346, 567.658}
 var lons []float64 = []float64{864.468, 324.987, 576.243, 456.899, 134.456, 466.787}
@@ -53,7 +27,7 @@ var lons []float64 = []float64{864.468, 324.987, 576.243, 456.899, 134.456, 466.
 var weathertypes []string = []string{"clear",
 	"cloudy", "rainy", "snowy", "sunny"}
 
-var wdslice []Weatherdata
+var wdslice []weatherdata.Weatherdata
 
 //this should be sufficent for testing
 
@@ -81,7 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getfakewd() string {
-	newwdslice := make([]Weatherdata, 5)
+	newwdslice := make([]weatherdata.Weatherdata, 5)
 	//create a slice of weatherdata structs
 	for i := range newwdslice {
 		weathertype := ""
@@ -121,9 +95,11 @@ func getfakewd() string {
 			windspeed = wdslice[i].Windspeed
 			winddir = wdslice[i].Winddir
 		}
-		newwdslice[i] = Weatherdata{country, cities[i], lats[i],
-			lons[i], weathertype, temp, windspeed, winddir,
-			percentcloudy, percentrain, hour, min}
+		newwdslice[i] = weatherdata.Weatherdata{
+			Country: country, Threedigitcc: threedigitcc, City: cities[i],
+			Lat: lats[i], Lon: lons[i], Weather: weathertype, Temperature: temp,
+			Windspeed: windspeed, Winddir: winddir, Percentcloudy: percentcloudy,
+			Percentrain: percentrain, Hour: hour, Min: min}
 		//create an instance of weatherdata in the slice
 	}
 	wdjson, err := json.Marshal(newwdslice)
@@ -136,7 +112,7 @@ func getfakewd() string {
 	return wdjsonstr
 }
 func populatewd() {
-	wdslice = make([]Weatherdata, 5)
+	wdslice = make([]weatherdata.Weatherdata, 5)
 	for i := range wdslice {
 		//create a slice of weatherdata structs
 		hour := rand.Intn(24)
@@ -158,9 +134,11 @@ func populatewd() {
 		windspeed := rand.Float64() * 100 //arbitrary max speed
 		winddir := rand.Float64() * 360
 
-		wdslice[i] = Weatherdata{country, cities[i], lats[i], lons[i],
-			weathertype, temp, windspeed, winddir, percentcloudy,
-			percentrain, hour, min}
-		//create an instance of weatherdata
+		wdslice[i] = weatherdata.Weatherdata{
+			Country: country, Threedigitcc: threedigitcc, City: cities[i],
+			Lat: lats[i], Lon: lons[i], Weather: weathertype, Temperature: temp,
+			Windspeed: windspeed, Winddir: winddir, Percentcloudy: percentcloudy,
+			Percentrain: percentrain, Hour: hour, Min: min}
+		//create an instance of weatherdata in the slice
 	}
 }

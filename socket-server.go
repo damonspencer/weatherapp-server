@@ -78,6 +78,8 @@ func socketserver(args []string) { //args currently not used here
 			strings.Replace(locationmap[oldlocation], socket.Id()+":", "", -1)
 			//remove from old value
 			locationmap[loc] += socket.Id() + ":"
+			//TODO figure out if I should change he colon
+			//separated string to an array or list if possible
 			//add to new value
 			locationarray = getkeys(locationmap)
 		})
