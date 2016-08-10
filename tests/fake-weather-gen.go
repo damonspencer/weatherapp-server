@@ -43,13 +43,14 @@ func Fakewdhttpserver() {
 	populatewd()
 	//initially populate the weatherdata
 	//slice so we don't have null indexes
-	http.HandleFunc("/fakewd", handler)
+	http.HandleFunc("/", handler)
 	http.ListenAndServe(":5555", nil)
 	//a bad, but working handler function because
 	//the better ones I made didn't work right
 }
 
 //dynamically generate weather data each time you refresh the page
+//this is a somewhat bad way of simulating a change in the weather, but it works!
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, getfakewd(), r.URL.Path[1:])
 }
