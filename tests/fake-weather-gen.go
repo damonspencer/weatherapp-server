@@ -3,6 +3,7 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -16,10 +17,15 @@ import (
 
 //dynamically generate and post the fake weather data
 
-var country string = "Magnificent Glorious Country"
-var threedigitcc string = "MGC"
+const country string = "Magnificent Glorious Country"
+const threedigitcc string = "MGC"
+
+//I would mark the next four as constants,
+//but the language specification doesn't allow arrays to be constants
+//(maybe because of pointers?)
 var cities []string = []string{"Foo", "Bar", "Fgh", "somecity", "whatami"}
 var lats []float64 = []float64{123.456, 654.321, 732.345, 908.243, 675.346, 567.658}
+
 var lons []float64 = []float64{864.468, 324.987, 576.243, 456.899, 134.456, 466.787}
 
 //made with the world's highest quality rng:
@@ -31,13 +37,12 @@ var wdslice []weatherdata.Weatherdata
 
 //this should be sufficent for testing
 
-func Fakewdhttpserver() {
+func Fakewdhttpserver(b chan int) {
 
 	t := time.Now() //get time
-	r, err := strconv.Atoi(t.Format("20060102150405"))
-	if err != nil {
-		fmt.Println(err)
-		//TODO better error recovery
+	r, strconverr := strconv.Atoi(t.Format("20060102150405"))
+	if strconverr != nil {
+		log.Fatal(strconverr)
 	}
 	rand.Seed(int64(r)) //seed the rng
 	populatewd()
@@ -45,6 +50,8 @@ func Fakewdhttpserver() {
 	//slice so we don't have null indexes
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":5555", nil)
+	log.Println("Listening on port 5555")
+	b <- 1 //we're up, so send a signal
 	//a bad, but working handler function because
 	//the better ones I made didn't work right
 }
@@ -103,12 +110,11 @@ func getfakewd() string {
 			Percentrain: percentrain, Hour: hour, Min: min}
 		//create an instance of weatherdata in the slice
 	}
-	wdjson, err := json.Marshal(newwdslice)
+	wdjson, jsonerr := json.Marshal(newwdslice)
 	//jsonify
 	wdjsonstr := string(wdjson)
-	if err != nil {
-		fmt.Println(err)
-		//TODO better error recovery
+	if jsonerr != nil {
+		log.Fatal(jsonerr)
 	}
 	return wdjsonstr
 }

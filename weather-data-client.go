@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,40 +14,43 @@ import (
 const fakewdurl = "http://localhost:5555/fakewd"
 const socketserverurl = "http://localhost:5000"
 
-var oldweathermap map[string]weatherdata.Weatherdata
-var newweathermap map[string]weatherdata.Weatherdata
-var deltaweathermap map[string]weatherdata.Weatherdata
-var oldwd []weatherdata.Weatherdata
+func wdclient(args []string, b chan int) {
+	//test := false
+	//if contains(args, "test") {
+	//	test = true
+	//}
+	//log.Println(test)
 
-func wdclient(args []string) {
-	test := false
-	if contains(args, "test") {
-		test = true
-	}
-	log.Println(test)
+	//only test mode is implemented
+
+	oldweathermap := make(map[string]weatherdata.Weatherdata)
+	newweathermap := make(map[string]weatherdata.Weatherdata)
+	deltaweathermap := make(map[string]weatherdata.Weatherdata)
+	//map of locations to the actual weather at that place
+	//we need to have maps to get the delta of later
+
 	opts := &socketio_client.Options{
 		Transport: "websocket",
 		Query:     make(map[string]string),
 	}
-	time.Sleep(time.Second * 10)
-	//wait for the fake weather data server to start up
-	//there's got to be a better way....
-	//TODO find a better way
-
-	oldweathermap = make(map[string]weatherdata.Weatherdata)
-	newweathermap = make(map[string]weatherdata.Weatherdata)
-	//map of locations to the actual weather at that place
-	//we need to have a map to get the delta of later
-	newweathermap = testwdsetup(fakewdurl)
 	client, err := socketio_client.NewClient(socketserverurl, opts)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	} else {
 		log.Println("The wdc is connected! The client id above is probably the wdc")
 	}
+	locationchannel := make(chan []string)
+	locationchannel <- locationslice
+	locations := <-locationchannel
+	//wait until a client requests the weather before polling
+
+	//wait for the fake weather data server to start up
+	<-b
+	newweathermap = gettestwd(fakewdurl, locations)
+	//we'll wait until more than one request for the weather has been made before getting the delta
+
 	//emit the initial weather data
 	client.Emit("newwd", newweathermap)
-	locationchannel := make(chan []string)
 	for { //run until the program exits
 		locationchannel <- locationslice
 		locations := <-locationchannel
@@ -56,6 +58,8 @@ func wdclient(args []string) {
 		newweathermap = gettestwd(fakewdurl, locations)
 		deltaweathermap = getdeltamap(oldweathermap, newweathermap)
 		oldweathermap = newweathermap
+		//set the old one to the new one
+
 		//emit deltaweathermap...
 		client.Emit("newwd", deltaweathermap)
 		time.Sleep(time.Second) //sleep for 1 second
@@ -69,19 +73,16 @@ func gettestwd(url string, locations []string) map[string]weatherdata.Weatherdat
 
 	//we're not using a channel because
 	//we're trying to pretend this is an unrelated website
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err)
-	}
+	resp, httperr := http.Get(url)
+	handleerror(httperr)
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
+	body, ioerr := ioutil.ReadAll(resp.Body)
+	handleerror(ioerr)
 	//fmt.Println(body)
 	//fmt.Println(string(body))
-	var newwdslice []weatherdata.Weatherdata
-	err = json.Unmarshal(body[:len(body)-23], &newwdslice)
+	var wdslice []weatherdata.Weatherdata
+	jsonerr := json.Unmarshal(body[:len(body)-23], &wdslice)
+	handleerror(jsonerr)
 	//"%!(EXTRA string=fakewd)" appears at the end, so discard it
 	//a bad way of extracting a json
 	//from a byte array of a json turned into a
@@ -90,35 +91,14 @@ func gettestwd(url string, locations []string) map[string]weatherdata.Weatherdat
 	//or maybe I could make a better http server
 	//so I wouldn't have to do this in the first place...
 	//fmt.Println(newwdslice)
-	newweathermap := make(map[string]weatherdata.Weatherdata)
-	for i := range newwdslice {
-		globallocation := newwdslice[i].City + ":" + newwdslice[i].Threedigitcc
+	newmap := make(map[string]weatherdata.Weatherdata)
+	for i := range wdslice {
+		globallocation := wdslice[i].City + ":" + wdslice[i].Threedigitcc
 		if contains(locations, globallocation) {
-			newweathermap[globallocation] = newwdslice[i]
+			newmap[globallocation] = wdslice[i]
 		}
 	}
-	return newweathermap
-}
-
-func testwdsetup(url string) map[string]weatherdata.Weatherdata {
-	//the same as gettestwd minus the locations
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-	var newwdslice []weatherdata.Weatherdata
-	err = json.Unmarshal(body[:len(body)-23], &newwdslice)
-	newweathermap := make(map[string]weatherdata.Weatherdata)
-	for i := range newwdslice {
-		globallocation := newwdslice[i].City + ":" + newwdslice[i].Threedigitcc
-		newweathermap[globallocation] = newwdslice[i]
-	}
-	return newweathermap
+	return newmap
 }
 
 func getdeltamap(
@@ -140,5 +120,10 @@ func getdeltamap(
 		}
 	}
 
-	return deltamap //I think this is right
+	return deltamap
+}
+func handleerror(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
